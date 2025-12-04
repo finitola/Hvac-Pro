@@ -18,7 +18,7 @@ const app = {
         window.scrollTo(0, 0);
     },
 
-    // 1. სასწავლო რეჟიმი (ძველი სტილით, სქროლვადი)
+    // 1. სასწავლო რეჟიმი
     startStudyMode() {
         this.hideAllViews();
         document.getElementById('quiz-view').classList.add('active-view');
@@ -27,7 +27,7 @@ const app = {
         // ელემენტების მართვა
         document.getElementById('exam-controls').style.display = 'none';
         document.getElementById('exam-progress-container').style.display = 'none';
-        document.getElementById('question-card-container').innerHTML = ''; // ვასუფთავებთ კარტის კონტეინერს
+        document.getElementById('question-card-container').innerHTML = ''; 
         
         const listContainer = document.getElementById('study-list-container');
         listContainer.innerHTML = '';
@@ -54,7 +54,7 @@ const app = {
         });
     },
 
-    // 2. საგამოცდო რეჟიმი (ახალი - სათითაოდ)
+    // 2. საგამოცდო რეჟიმი
     startExamMode() {
         this.hideAllViews();
         document.getElementById('quiz-view').classList.add('active-view');
@@ -97,21 +97,25 @@ const app = {
         document.getElementById('progress-fill').style.width = `${progressPercent}%`;
         document.getElementById('progress-text').innerText = `კითხვა ${this.currentQuestionIndex + 1} / 30`;
         
-        const skippedCount = this.skippedQuestions.length;
+        // გამოტოვებულების სტატისტიკა
+        // ვითვლით რეალურად რამდენი კითხვაა ამჟამად პასუხგაუცემელი (skipped array-ში)
+        const currentSkippedCount = this.skippedQuestions.length;
         const badge = document.getElementById('skipped-badge');
-        if (skippedCount > 0) {
+        
+        if (currentSkippedCount > 0) {
             badge.style.display = 'inline-block';
-            badge.innerText = `გამოტოვებული: ${skippedCount}`;
+            badge.innerText = `გამოტოვებული: ${currentSkippedCount}`;
             badge.className = 'badge bg-orange';
         } else {
             badge.style.display = 'none';
         }
 
-        // ბოლო კითხვაზე ღილაკის შეცვლა
+        // ღილაკების ლოგიკა
         const nextBtn = document.querySelector('#exam-controls .btn-primary');
         if (this.currentQuestionIndex === 29) {
             nextBtn.innerText = "დასრულება ✅";
-            nextBtn.onclick = () => this.finishExam();
+            // ბოლო კითხვაზე იძახებს შემოწმებას
+            nextBtn.onclick = () => this.tryFinishExam();
         } else {
             nextBtn.innerText = "შემდეგი ➡️";
             nextBtn.onclick = () => this.nextQuestion();
@@ -120,7 +124,6 @@ const app = {
         // კარტის აწყობა
         let optionsHtml = '<ul class="options">';
         q.options.forEach((opt, i) => {
-            // შევამოწმოთ თუ უკვე მონიშნული აქვს (უკან დაბრუნებისას ან გადახედვისას)
             const isChecked = this.userAnswers[this.currentQuestionIndex] === i ? 'checked' : '';
             optionsHtml += `
             <li>
@@ -143,28 +146,80 @@ const app = {
 
     saveAnswer(optionIndex) {
         this.userAnswers[this.currentQuestionIndex] = optionIndex;
-        // თუ გამოტოვებულებში იყო, ამოვიღოთ
+        // თუ ეს კითხვა გამოტოვებულებში იყო, ამოვიღოთ სიიდან, რადგან უკვე გასცა პასუხი
         this.skippedQuestions = this.skippedQuestions.filter(i => i !== this.currentQuestionIndex);
+        
+        // განვაახლოთ გამოტოვებულების ბეჯი
+        const badge = document.getElementById('skipped-badge');
+        if (this.skippedQuestions.length === 0) badge.style.display = 'none';
+        else badge.innerText = `გამოტოვებული: ${this.skippedQuestions.length}`;
     },
 
     nextQuestion() {
-        // თუ არ მონიშნა და არც გამოტოვა, ჩავთვალოთ გამოტოვებულად? 
-        // ჯობია არ გავუშვათ თუ არ მონიშნა, ან გამოტოვებას დააჭიროს.
-        // მაგრამ მარტივი ლოგიკისთვის: უბრალოდ გადავიდეს.
-        
+        // 1. შემოწმება: მონიშნულია თუ არა პასუხი?
+        if (this.userAnswers[this.currentQuestionIndex] === undefined) {
+            alert("⚠️ გთხოვთ მონიშნოთ პასუხი!\n\nთუ პასუხი არ იცით და გსურთ გადასვლა, გამოიყენეთ ღილაკი 'გამოტოვება'.");
+            return;
+        }
+
+        // 2. გადასვლა
         if (this.currentQuestionIndex < 29) {
             this.currentQuestionIndex++;
             this.renderQuestion();
         } else {
-            this.finishExam();
+            this.tryFinishExam();
         }
     },
 
     skipQuestion() {
+        // ამატებს გამოტოვებულებში, თუ უკვე არ არის
         if (!this.skippedQuestions.includes(this.currentQuestionIndex)) {
-            this.skippedQuestions.push(this.currentQuestionIndex);
+            // თუ პასუხი უკვე გაცემულია, skip-ს აზრი არ აქვს, მაგრამ მაინც გადავიდეს
+            if (this.userAnswers[this.currentQuestionIndex] === undefined) {
+                this.skippedQuestions.push(this.currentQuestionIndex);
+            }
         }
-        this.nextQuestion();
+        
+        // გადადის შემდეგზე პასუხის მოთხოვნის გარეშე
+        if (this.currentQuestionIndex < 29) {
+            this.currentQuestionIndex++;
+            this.renderQuestion();
+        } else {
+            // თუ ბოლო კითხვაზე "გამოტოვებას" დააჭირა
+            this.tryFinishExam();
+        }
+    },
+
+    // ახალი ფუნქცია: დასრულების მცდელობა
+    tryFinishExam() {
+        // 1. ამოწმებს მიმდინარე კითხვას (თუ ბოლო კითხვაზეა)
+        if (this.userAnswers[this.currentQuestionIndex] === undefined && !this.skippedQuestions.includes(this.currentQuestionIndex)) {
+             // თუ არც პასუხია და არც გამოტოვებულებშია (მაგ. ბოლო კითხვაზე პირდაპირ დასრულებას დააწვა)
+             alert("⚠️ მონიშნეთ ამ კითხვის პასუხი ან დააჭირეთ 'გამოტოვებას'.");
+             return;
+        }
+
+        // 2. ამოწმებს არის თუ არა სადმე გამოტოვებული/უპასუხო კითხვა
+        // (უნდა იყოს 30 პასუხი სულ)
+        let firstUnanswered = -1;
+        for (let i = 0; i < 30; i++) {
+            if (this.userAnswers[i] === undefined) {
+                firstUnanswered = i;
+                break;
+            }
+        }
+
+        if (firstUnanswered !== -1) {
+            const confirmGo = confirm(`⚠️ ტესტს ვერ დაასრულებთ!\n\nთქვენ გაქვთ გამოტოვებული ან პასუხგაუცემელი კითხვები.\nსავალდებულოა ყველა კითხვაზე პასუხის გაცემა.\n\nგსურთ გადახვიდეთ პირველ გამოტოვებულ კითხვაზე? (კითხვა №${firstUnanswered + 1})`);
+            if (confirmGo) {
+                this.currentQuestionIndex = firstUnanswered;
+                this.renderQuestion();
+            }
+            return;
+        }
+
+        // 3. თუ ყველაფერი რიგზეა, ასრულებს
+        this.finishExam();
     },
 
     updateTimerDisplay() {
@@ -193,18 +248,14 @@ const app = {
                 let optionsHtml = '<ul class="options">';
                 q.options.forEach((opt, i) => {
                     let liClass = '';
-                    if (i === q.correct) liClass = 'user-correct'; // სწორი პასუხი
-                    if (i === userAnswer && i !== q.correct) liClass = 'user-wrong'; // მომხმარებლის არასწორი არჩევანი
+                    if (i === q.correct) liClass = 'user-correct'; 
+                    if (i === userAnswer && i !== q.correct) liClass = 'user-wrong'; 
                     
-                    // თუ არაფერი მოუნიშნავს
-                    if (userAnswer === undefined && i === q.correct) {
-                        liClass = 'user-correct'; // მაინც ვაჩვენოთ რომელი იყო სწორი
-                    }
-
                     optionsHtml += `<li class="option-label ${liClass}" style="cursor:default">${String.fromCharCode(97 + i)}. ${opt}</li>`;
                 });
                 optionsHtml += '</ul>';
                 
+                // აქ "გამოტოვებული" წესით აღარ უნდა გამოჩნდეს, რადგან დავბლოკეთ, მაგრამ მაინც იყოს კოდში
                 const statusText = userAnswer === undefined ? '<span style="color:orange">(გამოტოვებული)</span>' : '';
                 card.innerHTML = `<div class="question-text">${index + 1}. ${q.q} ${statusText}</div>${optionsHtml}`;
                 reviewContainer.appendChild(card);
