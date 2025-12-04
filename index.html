@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>HVAC PRO - პროფესიონალთა პლატფორმა</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❄️</text></svg>">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo" onclick="app.showHome()">HVAC <span>PRO</span></div>
+        <div class="timer-box" id="timer">30:00</div>
+        <nav class="nav-icons">
+            <button onclick="app.showHome()" title="მთავარი">🏠</button>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section id="home-view" class="view-section active-view">
+            <div class="hero-card">
+                <h1>გამარჯობა, კოლეგავ! 👋</h1>
+                <p>ეს არის HVAC სისტემების ცოდნის ბაზა და საგამოცდო პლატფორმა.</p>
+            </div>
+
+            <div class="grid-menu">
+                <div class="menu-item" onclick="app.startStudyMode()">
+                    <div class="icon">📖</div>
+                    <h3>სწავლის რეჟიმი</h3>
+                    <p>ყველა კითხვა პასუხებით</p>
+                </div>
+
+                <div class="menu-item exam-item" onclick="app.startExamMode()">
+                    <div class="icon">📝</div>
+                    <h3>გამოცდა</h3>
+                    <p>სიმულაციური ტესტი</p>
+                </div>
+
+                <div class="menu-item" onclick="app.startInfoMode()">
+                    <div class="icon">ℹ️</div>
+                    <h3>ინფო დაფა</h3>
+                    <p>ფრეონების კატეგორიები</p>
+                </div>
+
+                <div class="menu-item disabled">
+                    <div class="icon">🛠️</div>
+                    <h3>დიაგნოსტიკა</h3>
+                    <p>მალე დაემატება...</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="quiz-view" class="view-section">
+            <div id="quiz-header-info"></div>
+            <div id="questions-container"></div>
+            
+            <div class="action-area">
+                <button id="finish-btn" class="btn btn-primary" onclick="app.finishExam()">დასრულება</button>
+            </div>
+        </section>
+
+        <section id="info-view" class="view-section">
+            <div class="card">
+                <h2>🧪 ფრეონების კლასიფიკაცია</h2>
+                <div id="info-content"></div>
+                <button class="btn btn-outline" onclick="window.scrollTo(0,0)">ზევით</button>
+            </div>
+        </section>
+
+        <section id="result-view" class="view-section">
+            <div class="card result-card">
+                <h2>შედეგი</h2>
+                <div class="score-circle" id="final-score">0</div>
+                <h3 id="pass-fail-text"></h3>
+                <p id="pass-fail-desc"></p>
+                
+                <div class="btn-group">
+                    <button class="btn btn-outline" onclick="app.showHome()">მენიუ</button>
+                    <button class="btn btn-success" onclick="app.startExamMode()">თავიდან ცდა</button>
+                </div>
+            </div>
+            <div class="review-header">შეცდომების გარჩევა:</div>
+            <div id="review-container"></div>
+        </section>
+    </main>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
